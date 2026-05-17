@@ -2,9 +2,18 @@
 runs/
 *.log
 
-# Datasets
-data/raw/
-data/processed/
+# Datasets — ignora conteúdo mas mantém estrutura (gitkeep + README versionados)
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/raw/README.md
+!data/raw/train/
+!data/raw/val/
+!data/raw/test/
+!data/raw/train/.gitkeep
+!data/raw/val/.gitkeep
+!data/raw/test/.gitkeep
+!data/processed/.gitkeep
 
 # Pesos grandes (commit apenas se < 50MB; senão use Git LFS)
 *.pt

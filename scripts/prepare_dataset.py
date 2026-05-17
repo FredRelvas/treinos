@@ -147,19 +147,42 @@ def _list_images(path: Path) -> list[Path]:
 
 
 def _convert_coco(input_root: Path) -> dict[str, SplitData]:
-    """Lê COCO JSONs já existentes (train/val/test ou um único)."""
-    # Procura por annotations padrão.
-    candidates = list(input_root.rglob("*.json"))
-    splits: dict[str, SplitData] = {}
-    for j in candidates:
+    """Lê COCO JSONs já existentes.
+
+    Suporta dois layouts:
+      A) Multi-JSON  — train.json, val.json, test.json separados.
+      B) Single-JSON — 1 JSON + pastas físicas train/, val/, test/ com imagens.
+         O split é determinado pela pasta física onde cada imagem mora.
+    """
+    valid_jsons: list[tuple[Path, dict]] = []
+    for j in input_root.rglob("*.json"):
         try:
             with j.open("r", encoding="utf-8") as fh:
                 data = json.load(fh)
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, OSError):
             continue
-        if not all(k in data for k in ("images", "annotations", "categories")):
-            continue
+        if all(k in data for k in ("images", "annotations", "categories")):
+            valid_jsons.append((j, data))
 
+    if not valid_jsons:
+        raise RuntimeError("Nenhum JSON COCO válido encontrado em " + str(input_root))
+
+    # Layout B: 1 JSON único + pastas físicas com imagens → split por pasta.
+    physical_dirs = {
+        name: input_root / name
+        for name in ("train", "val", "test")
+        if (input_root / name).is_dir() and _list_images(input_root / name)
+    }
+    only_one_json = len(valid_jsons) == 1
+    json_has_split_in_name = any(
+        s in valid_jsons[0][0].stem.lower() for s in ("train", "val", "test")
+    )
+    if only_one_json and len(physical_dirs) >= 2 and not json_has_split_in_name:
+        return _convert_coco_single_json_physical_split(valid_jsons[0], physical_dirs)
+
+    # Layout A: cada JSON descreve seu split.
+    splits: dict[str, SplitData] = {}
+    for j, data in valid_jsons:
         name = j.stem.lower()
         if "train" in name:
             split_name = "train"
@@ -170,7 +193,6 @@ def _convert_coco(input_root: Path) -> dict[str, SplitData]:
         else:
             split_name = "train"
 
-        # Tenta achar diretório de imagens irmão.
         img_dir = j.parent / "images"
         if not img_dir.is_dir():
             img_dir = j.parent
@@ -179,7 +201,7 @@ def _convert_coco(input_root: Path) -> dict[str, SplitData]:
         for img in data["images"]:
             candidate = img_dir / img["file_name"]
             if not candidate.exists():
-                candidate = next((p for p in input_root.rglob(img["file_name"])), candidate)
+                candidate = next((p for p in input_root.rglob(Path(img["file_name"]).name)), candidate)
             image_files[img["id"]] = candidate
 
         splits[split_name] = SplitData(
@@ -187,11 +209,74 @@ def _convert_coco(input_root: Path) -> dict[str, SplitData]:
             annotations=data["annotations"],
             image_files=image_files,
         )
-        # categories — guardadas no primeiro split visto
         splits.setdefault("_categories", data["categories"])  # type: ignore
 
-    if "_categories" not in splits:
-        raise RuntimeError("Nenhum JSON COCO válido encontrado.")
+    return splits
+
+
+def _convert_coco_single_json_physical_split(
+    json_entry: tuple[Path, dict],
+    physical_dirs: dict[str, Path],
+) -> dict[str, SplitData]:
+    """1 JSON único + pastas físicas train/val/test → splita por pasta.
+
+    Mapeia cada imagem do JSON (por basename) para a pasta física onde
+    ela mora. Anotações seguem a imagem correspondente.
+    """
+    json_path, data = json_entry
+    _log.info(
+        "Detectado layout 'single-JSON + pastas físicas': %s + %s",
+        json_path.name, sorted(physical_dirs.keys()),
+    )
+
+    # Indexa todas as imagens físicas por basename.
+    basename_to_split: dict[str, str] = {}
+    basename_to_path: dict[str, Path] = {}
+    for split_name, dir_path in physical_dirs.items():
+        for img_path in _list_images(dir_path):
+            basename_to_split[img_path.name] = split_name
+            basename_to_path[img_path.name] = img_path
+
+    # Distribui imagens do JSON pelos splits.
+    split_buckets: dict[str, dict] = {
+        name: {"images": [], "annotations": [], "image_files": {}, "ids": set()}
+        for name in physical_dirs
+    }
+    unmatched = 0
+    for img in data["images"]:
+        basename = Path(img["file_name"]).name
+        split = basename_to_split.get(basename)
+        if split is None:
+            unmatched += 1
+            continue
+        bucket = split_buckets[split]
+        # Normaliza file_name para basename (será copiada plana pra processed/).
+        img_normalized = dict(img)
+        img_normalized["file_name"] = basename
+        bucket["images"].append(img_normalized)
+        bucket["image_files"][img["id"]] = basename_to_path[basename]
+        bucket["ids"].add(img["id"])
+
+    if unmatched:
+        _log.warning("%d imagens do JSON não foram encontradas nas pastas físicas.", unmatched)
+
+    # Distribui anotações.
+    for ann in data["annotations"]:
+        for bucket in split_buckets.values():
+            if ann["image_id"] in bucket["ids"]:
+                bucket["annotations"].append(ann)
+                break
+
+    splits: dict[str, SplitData] = {}
+    for name, b in split_buckets.items():
+        if not b["images"]:
+            continue
+        splits[name] = SplitData(
+            images=b["images"], annotations=b["annotations"], image_files=b["image_files"]
+        )
+        _log.info("  %s: %d imagens, %d anotações", name, len(b["images"]), len(b["annotations"]))
+
+    splits["_categories"] = data["categories"]  # type: ignore
     return splits
 
 

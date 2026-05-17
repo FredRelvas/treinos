@@ -76,12 +76,21 @@ python scripts/generate_smoke_data.py
 
 ## 3. Receber dataset do professor
 
-Coloque os arquivos em `data/raw/`. Formatos aceitos: **COCO JSON**, **YOLO TXT**, **Pascal VOC**.
+Arraste para `data/raw/` (já existe com subpastas `train/`, `val/`, `test/` prontas).
+Formatos aceitos: **COCO JSON**, **YOLO TXT**, **Pascal VOC**.
 
-```bash
-mkdir -p data/raw
-cp -r /caminho/do/dataset/* data/raw/
+**Veja `data/raw/README.md` para os 5 cenários típicos com exemplos de onde colocar cada arquivo.**
+
+Cenário mais comum (prof manda 1 JSON único + 2 pastas):
 ```
+data/raw/
+├── train/   ← arraste imagens de treino aqui
+├── test/    ← arraste imagens de teste aqui
+└── labels.json   ← anotações COCO
+```
+
+Se vier validação também (`val/` + imagens), o `prepare_dataset.py` respeita o split do prof.
+Sem `val/`, ele cria automaticamente 80/20 a partir do train.
 
 ---
 
