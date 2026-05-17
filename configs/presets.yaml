@@ -1,0 +1,61 @@
+# Presets de treino por hardware.
+# Estrutura: {preset_name: {device_kind: {param: value}}}
+# Sempre que o CLI passa --preset, esses valores viram o ponto de partida —
+# argumentos CLI específicos (--epochs, --batch, --subset) sobrescrevem.
+#
+# Níveis de augmentation:
+#   "off"      — desativada
+#   "light"    — só flip + color jitter leve
+#   "standard" — flip + jitter + crop + scale
+#   "full"     — standard + mosaic (YOLO) + mixup (YOLO)
+
+fast:
+  cuda:
+    epochs: 15
+    batch: 16
+    subset: 0.3
+    augmentation: light
+  mps:
+    epochs: 5
+    batch: 4
+    subset: 0.2
+    augmentation: light
+  cpu:
+    epochs: 3
+    batch: 2
+    subset: 0.1
+    augmentation: "off"
+
+balanced:
+  cuda:
+    epochs: 50
+    batch: 16
+    subset: 0.7
+    augmentation: standard
+  mps:
+    epochs: 20
+    batch: 8
+    subset: 0.5
+    augmentation: standard
+  cpu:
+    epochs: 10
+    batch: 2
+    subset: 0.3
+    augmentation: light
+
+full:
+  cuda:
+    epochs: 100
+    batch: 16
+    subset: 1.0
+    augmentation: full
+  mps:
+    epochs: 50
+    batch: 8
+    subset: 0.8
+    augmentation: standard
+  cpu:
+    epochs: 20
+    batch: 2
+    subset: 0.5
+    augmentation: light

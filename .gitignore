@@ -1,0 +1,45 @@
+# Runs e artefatos
+runs/
+*.log
+
+# Datasets
+data/raw/
+data/processed/
+
+# Pesos grandes (commit apenas se < 50MB; senão use Git LFS)
+*.pt
+*.pth
+*.onnx
+*.engine
+# Mas mantemos pesos pequenos do smoke
+!data/smoke/**
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Venvs
+.venv/
+venv/
+env/
+
+# uv
+.uv/
+uv.lock
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Docker
+*.dockerignore
+
+# OS
+Thumbs.db

@@ -1,0 +1,29 @@
+services:
+  pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cv-prova-pc150:latest
+    container_name: cv-prova-pc150
+    working_dir: /workspace
+    volumes:
+      - ./data:/workspace/data
+      - ./runs:/workspace/runs
+      - ./configs:/workspace/configs
+      - ./src:/workspace/src
+      - ./scripts:/workspace/scripts
+    ports:
+      - "8888:8888"  # opcional: jupyter notebook
+    shm_size: "8gb"
+    tty: true
+    stdin_open: true
+    environment:
+      - PYTHONPATH=/workspace
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    command: ["bash"]

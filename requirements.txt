@@ -1,0 +1,20 @@
+# Fallback para pip puro (sem uv). Regenerar com:
+#   uv export --no-hashes --format requirements-txt > requirements.txt
+#
+# Detectron2 NÃO está aqui — instalar manualmente após:
+#   pip install 'git+https://github.com/facebookresearch/detectron2.git'
+
+torch>=2.3.0
+torchvision>=0.18.0
+torchaudio>=2.3.0
+ultralytics>=8.2.0
+opencv-python>=4.9.0
+pycocotools>=2.0.7
+matplotlib>=3.8.0
+pandas>=2.2.0
+pyyaml>=6.0.1
+tqdm>=4.66.0
+torchcam>=0.4.0
+Pillow>=10.0.0
+scipy>=1.12.0
+numpy>=1.26.0

@@ -1,0 +1,51 @@
+# Hiperparâmetros base do YOLO (ultralytics).
+# Os campos abaixo vão direto como kwargs em `model.train()`.
+# CLI override > preset > este arquivo > defaults do ultralytics.
+
+imgsz: 640
+optimizer: SGD
+lr0: 0.01
+lrf: 0.01           # learning rate final (multiplicador de lr0)
+momentum: 0.937
+weight_decay: 0.0005
+warmup_epochs: 3.0
+warmup_momentum: 0.8
+warmup_bias_lr: 0.1
+label_smoothing: 0.1
+patience: 10        # early stopping
+save_period: 3      # checkpoint a cada 3 épocas
+cos_lr: false
+amp: true           # ignorado em MPS/CPU automaticamente
+
+# Augmentation por nível (resolvido em src/shared/augmentation.py)
+augmentation_overrides:
+  light:
+    hsv_h: 0.0
+    hsv_s: 0.2
+    hsv_v: 0.2
+    fliplr: 0.5
+    flipud: 0.0
+    mosaic: 0.0
+    mixup: 0.0
+    translate: 0.05
+    scale: 0.2
+  standard:
+    hsv_h: 0.015
+    hsv_s: 0.7
+    hsv_v: 0.4
+    fliplr: 0.5
+    flipud: 0.0
+    mosaic: 0.5
+    mixup: 0.0
+    translate: 0.1
+    scale: 0.5
+  full:
+    hsv_h: 0.015
+    hsv_s: 0.7
+    hsv_v: 0.4
+    fliplr: 0.5
+    flipud: 0.0
+    mosaic: 1.0
+    mixup: 0.15
+    translate: 0.1
+    scale: 0.5
