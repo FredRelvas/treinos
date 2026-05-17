@@ -6,6 +6,9 @@ services:
     image: cv-prova-pc150:latest
     container_name: cv-prova-pc150
     working_dir: /workspace
+    # Roda como o MESMO UID/GID do host — resolve permission denied em runs/ e data/.
+    # setup.sh exporta HOST_UID/HOST_GID; fora dele, defaults pra 1000:1000.
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     volumes:
       - ./data:/workspace/data
       - ./runs:/workspace/runs

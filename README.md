@@ -14,21 +14,46 @@ mas roda em Apple Silicon (MPS, via diretório `../MAC/`) e CPU.
 ./setup.sh
 ```
 
-O script detecta nesta ordem:
-
-1. **Docker + NVIDIA** → `docker compose up -d --build`
-2. **uv** → cria `.venv` e roda `uv sync`
-3. **pip** → cria `.venv` e roda `pip install -r requirements.txt`
-4. Senão → imprime instruções manuais e sai com código 1.
-
-**Detectron2 é opcional** (precisa compilar). Após o setup:
+O script **detecta todas as opções disponíveis** (Docker+NVIDIA, uv, pip) e
+abre um menu interativo pra você escolher. Para pular o menu e pegar a
+primeira opção viável (docker → uv → pip):
 
 ```bash
-uv pip install 'git+https://github.com/facebookresearch/detectron2.git'
-# ou: pip install 'git+https://github.com/facebookresearch/detectron2.git'
+./setup.sh --auto
 ```
 
-> Pipeline funciona sem Detectron2 — só desabilita o `train_detectron2.py`.
+**Recomendação:** em prova com tempo limitado, prefira **uv** (1–3 min e iteração mais rápida).
+Use Docker se o Detectron2 não compilar no host ou quiser isolamento total.
+
+### ⚠️ ATIVAR O AMBIENTE — CRÍTICO
+
+**O setup só prepara o ambiente. Antes de rodar QUALQUER comando, ative-o:**
+
+| Rota escolhida | Como ativar |
+|---|---|
+| **Docker** | `docker compose exec pipeline bash` (entra no shell do container; todos os comandos abaixo rodam lá dentro) |
+| **uv** | `source .venv/bin/activate` (no host, na pasta `PC-150/`) |
+| **pip** | `source .venv/bin/activate` (idem) |
+
+Sem ativar, você vai ver erros tipo `ModuleNotFoundError: torchvision` —
+o Python do sistema não tem as deps; elas estão no venv/container.
+
+Atalho pro Docker (sem entrar no shell):
+```bash
+docker compose exec pipeline python scripts/smoke_test.py --mode quick
+```
+
+### Detectron2 (opcional)
+
+```bash
+# Dentro do container Docker:  já vem instalado (se o build não falhou)
+# uv:
+uv pip install 'git+https://github.com/facebookresearch/detectron2.git'
+# pip:
+pip install 'git+https://github.com/facebookresearch/detectron2.git'
+```
+
+> Pipeline funciona sem Detectron2 — só desabilita `train_detectron2.py`.
 
 ---
 
@@ -129,6 +154,31 @@ Saídas em `runs/exp_.../inference/`:
 - `inference_report.json` (predição + GT por imagem)
 - `plots/precision_recall.png`, `confusion_matrix.png`
 - `plots/inference_samples/` (≥10 amostras anotadas: verde=pred, vermelho=GT)
+
+---
+
+## Problemas comuns
+
+### `ModuleNotFoundError: torchvision` (ou qualquer outro pacote)
+Você esqueceu de ativar o venv ou entrar no container. Veja a seção 1.
+
+### `PermissionError: [Errno 13]` em `runs/` ou `data/`
+Acontece no Docker quando o UID do container difere do UID do host. O
+`docker-compose.yml` agora usa `user: "${HOST_UID}:${HOST_GID}"` e o
+`setup.sh` exporta esses vars automaticamente. Se você subiu o container
+**sem** passar pelo `setup.sh`, suba assim:
+
+```bash
+HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose up -d --build
+```
+
+Se já existem arquivos com ownership errada em `runs/`:
+```bash
+sudo chown -R $(id -u):$(id -g) runs/ data/
+```
+
+### Detectron2 não importa
+Não foi instalado. É opcional — só afeta `train_detectron2.py`. Veja seção 1.
 
 ---
 
