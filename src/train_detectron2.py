@@ -16,7 +16,6 @@ import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 import yaml
 
@@ -49,7 +48,6 @@ Detectron2 não está instalado. Para instalar:
 def _import_detectron2():
     """Importa detectron2 com mensagem clara se não instalado."""
     try:
-        import detectron2  # noqa: F401
         from detectron2 import model_zoo
         from detectron2.config import get_cfg
         from detectron2.data.datasets import register_coco_instances
@@ -246,7 +244,6 @@ def train(args: argparse.Namespace) -> None:
 
             # Best e early stopping (usa o metric configurado).
             current = v50 if "AP50" in metric_key else v5095
-            ckpt_src = Path(cfg.OUTPUT_DIR) / "model_final.pth"
             last_ckpt = Path(cfg.OUTPUT_DIR) / f"model_{self.trainer.iter:07d}.pth"
             if last_ckpt.exists():
                 shutil.copy2(last_ckpt, paths.last)
@@ -269,6 +266,7 @@ def train(args: argparse.Namespace) -> None:
     class TrainerWithEval(d2["DefaultTrainer"]):
         @classmethod
         def build_evaluator(cls, cfg, dataset_name, output_folder=None):
+            del output_folder  # usamos cfg.OUTPUT_DIR diretamente
             return d2["COCOEvaluator"](dataset_name, output_dir=cfg.OUTPUT_DIR)
 
     trainer = TrainerWithEval(cfg)
