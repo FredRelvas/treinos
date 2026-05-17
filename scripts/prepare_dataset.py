@@ -315,8 +315,10 @@ def _convert_yolo(input_root: Path) -> dict[str, SplitData]:
                 w, h = im.size
             images.append({"id": img_id, "file_name": img_path.name, "width": w, "height": h})
             files[img_id] = img_path
-            # Procura .txt correspondente em labels/ irmão ou mesmo dir.
+            # Procura .txt em: mesmo dir > split_dir/labels/ > split_dir.parent/labels/split/
             txt = img_path.with_suffix(".txt")
+            if not txt.exists():
+                txt = split_dir / "labels" / img_path.with_suffix(".txt").name
             if not txt.exists():
                 txt = split_dir.parent / "labels" / split_name / img_path.with_suffix(".txt").name
             if not txt.exists():
@@ -473,8 +475,8 @@ def main() -> None:
     val = splits.get("val")
     test = splits.get("test")
 
-    if not val:
-        _log.warning("Split val ausente — criando 80/20 a partir do treino (seed=%d).", args.seed)
+    if val is None or not val.images:
+        _log.warning("Split val ausente ou vazio — criando 80/20 a partir do treino (seed=%d).", args.seed)
         train, val = _autosplit_val(train, ratio=args.val_ratio, seed=args.seed)
 
     ensure_dir(args.output)
