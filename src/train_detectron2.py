@@ -31,7 +31,7 @@ from src.shared.utils import get_logger, set_global_seed  # noqa: E402
 
 _log = get_logger("train_detectron2")
 
-VALID_MODELS = {"faster_rcnn", "retinanet", "cascade_rcnn"}
+VALID_MODELS = {"faster_rcnn", "faster_rcnn_101", "retinanet", "retinanet_101", "cascade_rcnn", "mask_rcnn"}
 
 _DETECTRON2_INSTALL_HINT = """
 Detectron2 não está instalado. Para instalar:
@@ -161,7 +161,7 @@ def train(args: argparse.Namespace) -> None:
 
     # Config base do model zoo.
     zoo_file = d2_cfg["model_zoo"][args.model]
-    if args.model == "cascade_rcnn":
+    if args.model in {"cascade_rcnn", "mask_rcnn"}:
         # Cascade do zoo é mask; só funciona se dataset tem máscaras.
         has_masks = any("segmentation" in a and a["segmentation"] for a in
                         json.loads(train_json.read_text()).get("annotations", []))

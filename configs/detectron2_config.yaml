@@ -3,8 +3,11 @@
 
 model_zoo:
   faster_rcnn: "COCO-Detection/faster_rcnn_R_50_FPN_3x.yaml"
+  faster_rcnn_101: "COCO-Detection/faster_rcnn_R_101_FPN_3x.yaml"
   retinanet: "COCO-Detection/retinanet_R_50_FPN_3x.yaml"
+  retinanet_101: "COCO-Detection/retinanet_R_101_FPN_3x.yaml"
   cascade_rcnn: "Misc/cascade_mask_rcnn_R_50_FPN_3x.yaml"
+  mask_rcnn: "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
 
 solver:
   base_lr: 0.0025
